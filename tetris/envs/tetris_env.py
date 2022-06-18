@@ -1,3 +1,4 @@
+from math import sqrt
 import gym
 from typing import Optional
 from tetris.envs.game.game import *
@@ -113,65 +114,25 @@ class TetrisEnv(gym.Env):
 
     def _get_reward(self):
         """
-        Idea:
-        There are 3 basic states:
-
-        * height decreases (vv good)
-        * height stays the same (debatable)
-        * height increases (bad)
-
-        If height decreases, simple positive reward
-
-        If height stays the same, then it depends on how close each of the
-        blocks is to the bottom of the screen (ie how deep in it went)
-
-        If height increases and no lines were cleared, just negative. If it
-        increases and lines were cleared, then adjust the negative (by how
-        much remains TBD)
+        Idea: make reward based on distance from "ideal" state
         """
 
-        def sinusoidal_amplify(r):
-            return numpy.sin(r * numpy.pi / 2)
+        def distance(piece: Piece):
+            ideal_ul, ideal_arrangement = piece.get_best_position()
 
-        # reward based on height
+            dist = sqrt(
+                (ideal_ul.x - piece.top_left.x) ** 2
+                + (ideal_ul.y - piece.top_left.y) ** 2
+            )
+            ret = dist / 400
+            if ideal_arrangement == piece.arrangement:
+                ret += 0.1
+            return ret
+
+        ret = distance(self.game.cur_piece)
         if self.game.just_dropped:
-            delta_h = (
-                self.game.dropped_piece_grid.height
-                - self.game.dropped_piece_grid.past_height
-            )
-            if abs(delta_h) > 4:
-                print("past height", self.game.dropped_piece_grid.past_height)
-                print("cur height", self.game.dropped_piece_grid.height)
-                print(
-                    "cur grid",
-                    numpy.array(self.game.dropped_piece_grid.numeric_used_spaces),
-                )
-                raise Exception("FAILED")
-
-            # case 1 - height decreases
-            if delta_h < 0:
-                return (
-                    sinusoidal_amplify(
-                        sinusoidal_amplify(
-                            sinusoidal_amplify(-delta_h / LINE_CLEAR_WEIGHT)
-                        )
-                    )
-                    * SCORE_DIVISION["line_clear"]
-                )
-
-            # case 2 or 3 (delta_h >= 0)
-            ret = (
-                self.game.dropped_piece_grid.last_piece_ending_height
-                / 20
-                * SCORE_DIVISION["ending_height"]
-            )
-            return ret - sinusoidal_amplify(delta_h / 4) * SCORE_DIVISION["line_add"]
-
-        # discourage ending the game
-        if not self.game.run:
-            return -1
-
-        return 0
+            ret += 0.6 * self.game.dropped_piece_grid.lines_just_cleared
+        return ret
 
     def _get_done(self):
         return not self.game.run
