@@ -18,6 +18,7 @@ class DroppedPieceGrid:
         )
         self.height = 0
         self.past_height = 0
+        self.delta_h = 0
 
         self.lines_just_cleared = 0
         self.last_piece_ending_height = 0
@@ -99,6 +100,7 @@ class DroppedPieceGrid:
             self.lines_just_cleared = rows_cleared
             self.past_height = self.height
             self.height = self._get_height()
+            self.delta_h = self.height - self.past_height
             self.last_piece_ending_height = max_height + 1  # +1 so that 19 -> 20
 
         return self

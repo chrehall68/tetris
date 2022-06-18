@@ -124,14 +124,14 @@ class TetrisEnv(gym.Env):
                 (ideal_ul.x - piece.top_left.x) ** 2
                 + (ideal_ul.y - piece.top_left.y) ** 2
             )
-            ret = dist / 400
+            ret = dist / 4000  # should give numbers <= 0.1
             if ideal_arrangement == piece.arrangement:
                 ret += 0.1
             return ret
 
         ret = distance(self.game.cur_piece)
         if self.game.just_dropped:
-            ret += 0.6 * self.game.dropped_piece_grid.lines_just_cleared
+            ret += 0.7 * self.game.dropped_piece_grid.lines_just_cleared
         return ret
 
     def _get_done(self):
