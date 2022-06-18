@@ -137,19 +137,14 @@ class TetrisGame:
         pygame.time.wait(50)
 
 
-from time import sleep
-
+"""
 gamer = TetrisGame(render_mode="human")
-for i in range(1000):
-    gamer.render()
-    gamer.step()
-    if not gamer.run:
-        break
-    sleep(0.05)
-
+while gamer.run:
+    gamer.play_execution_based()
     if i % 20 == 0:
         (
             gamer.cur_piece.top_left,
             gamer.cur_piece.arrangement,
         ) = gamer.cur_piece.get_best_position()
         gamer.cur_piece._get_blocks()
+"""
