@@ -141,7 +141,7 @@ class TetrisGame:
 gamer = TetrisGame(render_mode="human")
 while gamer.run:
     gamer.play_execution_based()
-    if i % 20 == 0:
+    if gamer.executions % 20 == 0:
         (
             gamer.cur_piece.top_left,
             gamer.cur_piece.arrangement,

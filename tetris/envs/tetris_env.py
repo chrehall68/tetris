@@ -39,7 +39,7 @@ class TetrisEnv(gym.Env):
 
         self.observation_space = spaces.Dict(
             {
-                "next_pieces": spaces.Box(1, 7, (3,), dtype=numpy.int64),
+                # "next_pieces": spaces.Box(1, 7, (3,), dtype=numpy.int64),
                 "held_piece": spaces.Box(0, 7, (1,), dtype=numpy.int64),
                 "dropped_piece_grid": spaces.Box(
                     0,
@@ -71,7 +71,6 @@ class TetrisEnv(gym.Env):
         self.game.render()
 
     def step(self, action):
-        # print("action is", action, "and type is", type(action))
         try:
             self.game.step([ACTION_MAPPINGS[action]])
         except Exception:
@@ -102,7 +101,7 @@ class TetrisEnv(gym.Env):
         cur_piece_locat = tuple(cur_piece_locat)
 
         return {
-            "next_pieces": numpy.array(next_pieces_val, dtype=numpy.int64),
+            # "next_pieces": numpy.array(next_pieces_val, dtype=numpy.int64),
             "held_piece": numpy.array([held_piece_val], dtype=numpy.int64),
             "dropped_piece_grid": numpy.array(
                 self.game.dropped_piece_grid.numeric_used_spaces, dtype=numpy.int64
@@ -113,6 +112,21 @@ class TetrisEnv(gym.Env):
         }
 
     def _get_reward(self):
+        # return self._distance_based_reward()
+        return self._sparse_reward() + 0.05
+
+    def _sparse_reward(self) -> float:
+        """
+        Idea: give score only based on clearing lines
+        """
+        return self._sinusoidal_amplify(
+            LINE_CLEAR_SCORES[self.game.dropped_piece_grid.lines_just_cleared] / 800
+        )
+
+    def _sinusoidal_amplify(self, inp) -> float:
+        return numpy.sin(numpy.pi * 0.5 * inp)
+
+    def _distance_based_reward(self) -> float:
         """
         Idea: make reward based on distance from "ideal" state
         """
@@ -124,7 +138,8 @@ class TetrisEnv(gym.Env):
                 (ideal_ul.x - piece.top_left.x) ** 2
                 + (ideal_ul.y - piece.top_left.y) ** 2
             )
-            ret = dist / 4000  # should give numbers <= 0.1
+
+            ret = (1 / (dist + 1)) * 0.2
             if ideal_arrangement == piece.arrangement:
                 ret += 0.1
             return ret
