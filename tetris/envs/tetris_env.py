@@ -39,18 +39,11 @@ class TetrisEnv(gym.Env):
 
         self.observation_space = spaces.Dict(
             {
-                # "next_pieces": spaces.Box(1, 7, (3,), dtype=numpy.int64),
                 "held_piece": spaces.Box(0, 7, (1,), dtype=numpy.int64),
                 "dropped_piece_grid": spaces.Box(
                     0,
-                    1,
+                    2,
                     (PLAYER_GRID_DIMENSIONS[1] * PLAYER_GRID_DIMENSIONS[0],),
-                    dtype=numpy.int64,
-                ),
-                "cur_piece_locat": spaces.Box(
-                    0,
-                    max(PLAYER_GRID_DIMENSIONS),
-                    (8,),
                     dtype=numpy.int64,
                 ),
             }
@@ -86,34 +79,25 @@ class TetrisEnv(gym.Env):
                 held_piece_val = val
                 break
 
-        next_pieces_val = []
-        for piece in self.game.next_pieces.next_pieces:
-            for T, val in PIECE_TO_NUMBER.items():
-                if piece == T:
-                    next_pieces_val.append(val)
-                    break
-        next_pieces_val = tuple(next_pieces_val)
-
-        cur_piece_locat = []
+        dropped_piece_grid = list(self.game.dropped_piece_grid.numeric_used_spaces)
+        for y in range(len(dropped_piece_grid)):
+            dropped_piece_grid[y] = list(dropped_piece_grid[y])
         for block in self.game.cur_piece.blocks:
             temp = block.top_left // SPACE_SIZE
-            cur_piece_locat.append((temp.x, temp.y))
-        cur_piece_locat = tuple(cur_piece_locat)
+            dropped_piece_grid[temp.y][temp.x] = 2
+        for y in range(len(dropped_piece_grid)):
+            dropped_piece_grid[y] = tuple(dropped_piece_grid[y])
 
         return {
-            # "next_pieces": numpy.array(next_pieces_val, dtype=numpy.int64),
             "held_piece": numpy.array([held_piece_val], dtype=numpy.int64),
             "dropped_piece_grid": numpy.array(
-                self.game.dropped_piece_grid.numeric_used_spaces, dtype=numpy.int64
-            ).flatten(),
-            "cur_piece_locat": numpy.array(
-                cur_piece_locat, dtype=numpy.int64
+                tuple(dropped_piece_grid), dtype=numpy.int64
             ).flatten(),
         }
 
     def _get_reward(self):
         # return self._distance_based_reward()
-        return self._sparse_reward() + 0.05
+        return self._sparse_reward() + numpy.float64(0.001)
 
     def _sparse_reward(self) -> float:
         """
@@ -139,14 +123,19 @@ class TetrisEnv(gym.Env):
                 + (ideal_ul.y - piece.top_left.y) ** 2
             )
 
-            ret = (1 / (dist + 1)) * 0.2
+            ret = (1 / (dist + 1)) * 0.005
             if ideal_arrangement == piece.arrangement:
-                ret += 0.1
+                ret += 0.005
+            if ideal_ul == piece.top_left and ideal_arrangement == piece.arrangement:
+                ret += 0.01
             return ret
 
         ret = distance(self.game.cur_piece)
+        # huge reward for getting this
         if self.game.just_dropped:
-            ret += 0.7 * self.game.dropped_piece_grid.lines_just_cleared
+            ret += self._sinusoidal_amplify(
+                LINE_CLEAR_SCORES[self.game.dropped_piece_grid.lines_just_cleared] / 800
+            )
         return ret
 
     def _get_done(self):
