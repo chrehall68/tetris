@@ -116,6 +116,8 @@ class TetrisEnv(gym.Env):
         }
 
     def _get_reward(self):
+        if self._get_done():
+            return -1
         return self.reward_functions[self.reward_mode]()
 
     def _sparse_reward(self) -> float:
