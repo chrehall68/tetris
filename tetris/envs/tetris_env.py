@@ -30,9 +30,11 @@ ACTION_MAPPINGS = {
 
 
 class TetrisEnv(gym.Env):
-    metadata = {"render_modes": ["human"]}
+    metadata = {"render_modes": ["human"], "reward_modes": ["sparse", "distance"]}
 
-    def __init__(self, render_mode: Optional[str] = None) -> None:
+    def __init__(
+        self, render_mode: Optional[str] = None, reward_mode: Optional[str] = None
+    ) -> None:
         self.render_mode = render_mode
 
         self.action_space = spaces.Discrete(len(KEY_MAPPINGS))
@@ -51,6 +53,19 @@ class TetrisEnv(gym.Env):
         self.game = TetrisGame(render_mode=self.render_mode)
         self.past_score = 0
 
+        self.reward_functions = {
+            "sparse": self._sparse_reward,
+            "distance": self._distance_based_reward,
+        }
+        if (
+            reward_mode is not None
+            and reward_mode in TetrisEnv.metadata["reward_modes"]
+        ):
+            self.reward_mode = reward_mode
+        else:
+            self.reward_mode = "sparse"  # sparse is default
+        print(f"using reward mode {self.reward_mode}")
+
     def reset(self, seed=None, return_info=False, options=None):
         self.past_score = 0
         self.game.reset()
@@ -59,7 +74,12 @@ class TetrisEnv(gym.Env):
             return self._get_obs(), self._get_info()
         return self._get_obs()
 
-    def render(self):
+    def render(self, render_mode=None):
+        if render_mode is None:
+            render_mode = self.render_mode
+        else:
+            self.render_mode = render_mode
+
         assert self.render_mode == "human"
         self.game.render()
 
@@ -96,8 +116,7 @@ class TetrisEnv(gym.Env):
         }
 
     def _get_reward(self):
-        # return self._distance_based_reward()
-        return self._sparse_reward() + numpy.float64(0.001)
+        return self.reward_functions[self.reward_mode]()
 
     def _sparse_reward(self) -> float:
         """
@@ -105,7 +124,7 @@ class TetrisEnv(gym.Env):
         """
         return self._sinusoidal_amplify(
             LINE_CLEAR_SCORES[self.game.dropped_piece_grid.lines_just_cleared] / 800
-        )
+        ) + numpy.float64(0.001)
 
     def _sinusoidal_amplify(self, inp) -> float:
         return numpy.sin(numpy.pi * 0.5 * inp)
