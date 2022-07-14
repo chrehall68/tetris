@@ -66,6 +66,7 @@ KEY_MAPPINGS = {
     pygame.K_z: "spin left",
     pygame.K_c: "hold",
     pygame.K_SPACE: "hard drop",
+    pygame.K_q: "nothing",
 }
 
 

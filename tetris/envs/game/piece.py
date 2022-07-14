@@ -172,12 +172,25 @@ class Piece(BasePiece):
     def move(
         self,
         keyInputs: Optional[Tuple[pygame.event.Event]] = None,
-    ) -> None:
+    ) -> bool:
+        # valid move variables
+        valid_move = True
+        prev_arrangement = self.arrangement
+        prev_rotate_center = self.rotate_center
+        had_valid_key = False
+
         next_coordinate = self.top_left
 
         if keyInputs is not None:
             for event in keyInputs:
                 if (event.type == pygame.KEYDOWN) and event.key in KEY_MAPPINGS:
+                    had_valid_key = True
+
+                    if (
+                        KEY_MAPPINGS[event.key] == "nothing"
+                        or KEY_MAPPINGS[event.key] == "hold"
+                    ):
+                        return True  # nothing and hold are valid moves.
                     if KEY_MAPPINGS[event.key] == "right":
                         next_coordinate = self._try_move(
                             next_coordinate, Coordinate(SPACE_SIZE, 0)
@@ -207,8 +220,19 @@ class Piece(BasePiece):
                     if KEY_MAPPINGS[event.key] == "spin left":
                         next_coordinate = self.rotate_left(next_coordinate)
 
+        if (
+            had_valid_key
+            and next_coordinate == self.top_left
+            and prev_arrangement == self.arrangement
+            and prev_rotate_center == self.rotate_center
+        ):
+            # if absolutely nothing changed
+            # and it had valid keys,
+            # it must've been an invalid move
+            valid_move = False
         self.top_left = next_coordinate
         self._get_blocks()
+        return valid_move
 
     def move_down(self) -> bool:
         old_top_left = self.top_left

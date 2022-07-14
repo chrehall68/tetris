@@ -36,12 +36,14 @@ class TetrisGame:
                 event.type == pygame.KEYDOWN
                 and event.key in KEY_MAPPINGS
                 and KEY_MAPPINGS[event.key] == "hold"
-                and self.holdable
             ):
-                self.cur_piece = self.holder.swap(self.cur_piece)
-                if self.cur_piece is None:
-                    self.get_next_piece()
-                self.holdable = False
+                if self.holdable:
+                    self.cur_piece = self.holder.swap(self.cur_piece)
+                    if self.cur_piece is None:
+                        self.get_next_piece()
+                    self.holdable = False
+                else:
+                    self.valid_last_move = False
 
     def reset(self):
         """
@@ -69,6 +71,7 @@ class TetrisGame:
         self.executions = 0
         self.just_dropped = False
         self.max_delta_h = 0  # max delta_h of cur piece. It is in spaces, not pixels
+        self.valid_last_move = True
 
         # variables used to run the game
         self.score_keeper = Score(self.score_screen, self.render_mode)
@@ -116,9 +119,12 @@ class TetrisGame:
         else:
             actual_events = events
 
+        self.valid_last_move = True
         self.just_dropped = False
         self.hold_piece(actual_events)
-        self.cur_piece.move(actual_events)
+        self.valid_last_move = (
+            self.cur_piece.move(actual_events) and self.valid_last_move
+        )
         self.executions += 1
 
         if self.cur_piece.out:

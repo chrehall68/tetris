@@ -91,9 +91,10 @@ class BasePiece:
         for block in self.blocks:
             block.draw()
 
-    def move(self, event: Optional[pygame.event.Event] = None) -> None:
+    def move(self, event: Optional[pygame.event.Event] = None) -> bool:
         """
         Attempts to move the piece.
+        Returns True on success, False on failure to move the piece
         """
         pass
 

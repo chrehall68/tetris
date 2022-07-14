@@ -120,6 +120,38 @@ class TetrisEnv(gym.Env):
             return -1
         return self.reward_functions[self.reward_mode]()
 
+    def _solid_reward(self) -> float:
+        """
+        Idea: give score based on how far down it made and how
+        many empty spaces are underneath it when placed
+        """
+
+        def _spaces_beneath(piece: Piece):
+            coords = set()
+            dropped_piece_grid = self.game.dropped_piece_grid.numeric_used_spaces
+            for block in piece.blocks:
+                coords.add(block.top_left)
+            used_x_coords = set()
+            for coord in coords:
+                if coord.x not in used_x_coords:
+                    pass
+
+        # get current height
+        max_depth = 0
+        for block in self.game.cur_piece.blocks:
+            max_depth = max(max_depth, block.top_left.y)
+        down_score = self._sinusoidal_amplify(max_depth / 19) * 0.01  # 0.01 is max
+
+        solid_score = 0
+        if self.game.just_dropped:
+            spaces_beneath = _spaces_beneath(self.game.cur_piece)
+            if spaces_beneath == 0:
+                solid_score = 0.3
+            else:
+                solid_score = -1 * (self._sigmoid(spaces_beneath) * 2 - 1)
+
+        return down_score + solid_score
+
     def _sparse_reward(self) -> float:
         """
         Idea: give score only based on clearing lines
@@ -130,6 +162,9 @@ class TetrisEnv(gym.Env):
 
     def _sinusoidal_amplify(self, inp) -> float:
         return numpy.sin(numpy.pi * 0.5 * inp)
+
+    def _sigmoid(self, inp) -> float:
+        return 1 / (1 + numpy.exp(-inp))
 
     def _distance_based_reward(self) -> float:
         """
