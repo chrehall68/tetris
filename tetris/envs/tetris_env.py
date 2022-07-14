@@ -83,6 +83,9 @@ class TetrisEnv(gym.Env):
         else:
             self.step_mode = "positive"  # positive step by default
 
+        self.penalize_illegal = True
+        self.penalties = {False: lambda: 0, True: self._penalize_illegal_moves}
+
         print(f"using reward mode {self.reward_mode}")
         print(f"using step mode {self.step_mode}")
 
@@ -144,7 +147,13 @@ class TetrisEnv(gym.Env):
         return (
             self.reward_functions[self.reward_mode]()
             + self.step_function[self.step_mode]()
+            + self.penalties[self.penalize_illegal]()
         )
+
+    def _penalize_illegal_moves(self) -> float:
+        if not self.game.valid_last_move:
+            return -10
+        return 0
 
     def _solid_reward(self) -> float:
         """
@@ -154,18 +163,18 @@ class TetrisEnv(gym.Env):
         # get current height
         max_depth = 0
         for block in self.game.cur_piece.blocks:
-            max_depth = max(max_depth, block.top_left.y)
+            max_depth = max(max_depth, block.top_left.y // SPACE_SIZE)
         down_score = self._sinusoidal_amplify(max_depth / 19) * 0.01  # 0.01 is max
 
         solid_score = 0
         if self.game.just_dropped:
             spaces_beneath = self.game.dropped_piece_grid.empty_spaces_beneath
             if spaces_beneath == 0:
-                solid_score = 0.5
+                solid_score = 1
             else:
-                solid_score = 0.5 - self._sigmoid(spaces_beneath) * 2 - 1
+                solid_score = 1 - self._sigmoid(spaces_beneath) * 2 - 1
 
-        return down_score + solid_score
+        return down_score + solid_score + self._sparse_reward() * 10
 
     def _sparse_reward(self) -> float:
         """

@@ -178,6 +178,7 @@ class Piece(BasePiece):
         prev_arrangement = self.arrangement
         prev_rotate_center = self.rotate_center
         had_valid_key = False
+        valid_key_affects = True
 
         next_coordinate = self.top_left
 
@@ -190,7 +191,7 @@ class Piece(BasePiece):
                         KEY_MAPPINGS[event.key] == "nothing"
                         or KEY_MAPPINGS[event.key] == "hold"
                     ):
-                        return True  # nothing and hold are valid moves.
+                        valid_key_affects = False
                     if KEY_MAPPINGS[event.key] == "right":
                         next_coordinate = self._try_move(
                             next_coordinate, Coordinate(SPACE_SIZE, 0)
@@ -221,7 +222,7 @@ class Piece(BasePiece):
                         next_coordinate = self.rotate_left(next_coordinate)
 
         if (
-            had_valid_key
+            (had_valid_key and valid_key_affects)
             and next_coordinate == self.top_left
             and prev_arrangement == self.arrangement
             and prev_rotate_center == self.rotate_center
