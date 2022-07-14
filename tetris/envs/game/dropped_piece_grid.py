@@ -23,6 +23,7 @@ class DroppedPieceGrid:
         self.lines_just_cleared = 0
         self.last_piece_ending_height = 0
         self.last_piece_spaces = []
+        self.empty_spaces_beneath = 0
 
         self.render_mode = render_mode
         if self.render_mode == "human":
@@ -69,6 +70,23 @@ class DroppedPieceGrid:
     def __iadd__(self, piece: BasePiece):
         if piece is not None:
             max_height = self._add_to_grid(piece)
+
+            # check how many empty spaces beneath the piece
+            self.empty_spaces_beneath = 0
+            coords = []
+            for block in piece.blocks:
+                coords.append(block.top_left)
+            used_x_coords = set()
+            for coord in coords:
+                if coord.x not in used_x_coords:
+                    used_x_coords.add(coord.x)
+                    x = coord.x // SPACE_SIZE
+                    for y in range(coord.y // SPACE_SIZE, PLAYER_GRID_DIMENSIONS[1]):
+                        if self[Coordinate(x, y)]:
+                            if Coordinate(coord.x, y * SPACE_SIZE) not in coords:
+                                break
+                        else:
+                            self.empty_spaces_beneath += 1
 
             # check if any rows have been cleared
             rows_cleared = 0

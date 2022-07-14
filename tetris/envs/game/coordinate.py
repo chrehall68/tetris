@@ -32,3 +32,11 @@ class Coordinate:
     def __mul__(self, o):
         if type(o) == int:
             return Coordinate(self.x * o, self.y * o)
+
+    def __eq__(self, o: object) -> bool:
+        if type(o) == Coordinate:
+            return self.x == o.x and self.y == o.y
+        return False
+
+    def __ne__(self, __o: object) -> bool:
+        return not self == __o

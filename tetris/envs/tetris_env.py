@@ -30,10 +30,17 @@ ACTION_MAPPINGS = {
 
 
 class TetrisEnv(gym.Env):
-    metadata = {"render_modes": ["human"], "reward_modes": ["sparse", "distance"]}
+    metadata = {
+        "render_modes": ["human"],
+        "reward_modes": ["sparse", "distance", "solid"],
+        "step_modes": ["positive", "negative", "none"],
+    }
 
     def __init__(
-        self, render_mode: Optional[str] = None, reward_mode: Optional[str] = None
+        self,
+        render_mode: Optional[str] = None,
+        reward_mode: Optional[str] = None,
+        step_mode: Optional[str] = None,
     ) -> None:
         self.render_mode = render_mode
 
@@ -56,7 +63,14 @@ class TetrisEnv(gym.Env):
         self.reward_functions = {
             "sparse": self._sparse_reward,
             "distance": self._distance_based_reward,
+            "solid": self._solid_reward,
         }
+        self.step_function = {
+            "positive": lambda: 0.001,
+            "negative": lambda: -0.001,
+            "none": lambda: 0,
+        }
+
         if (
             reward_mode is not None
             and reward_mode in TetrisEnv.metadata["reward_modes"]
@@ -64,7 +78,13 @@ class TetrisEnv(gym.Env):
             self.reward_mode = reward_mode
         else:
             self.reward_mode = "sparse"  # sparse is default
+        if step_mode is not None and step_mode in TetrisEnv.metadata["step_modes"]:
+            self.step_mode = step_mode
+        else:
+            self.step_mode = "positive"  # positive step by default
+
         print(f"using reward mode {self.reward_mode}")
+        print(f"using step mode {self.step_mode}")
 
     def reset(self, seed=None, return_info=False, options=None):
         self.past_score = 0
@@ -89,6 +109,9 @@ class TetrisEnv(gym.Env):
         except Exception:
             self.game.step([ACTION_MAPPINGS[action.item()]])  # happens for dqn
         return self._get_obs(), self._get_reward(), self._get_done(), self._get_info()
+
+    def reward(self):
+        return self._get_reward()
 
     def _get_obs(self):
         for T, val in PIECE_TO_NUMBER.items():
@@ -117,25 +140,17 @@ class TetrisEnv(gym.Env):
 
     def _get_reward(self):
         if self._get_done():
-            return -1
-        return self.reward_functions[self.reward_mode]()
+            return -100
+        return (
+            self.reward_functions[self.reward_mode]()
+            + self.step_function[self.step_mode]()
+        )
 
     def _solid_reward(self) -> float:
         """
         Idea: give score based on how far down it made and how
         many empty spaces are underneath it when placed
         """
-
-        def _spaces_beneath(piece: Piece):
-            coords = set()
-            dropped_piece_grid = self.game.dropped_piece_grid.numeric_used_spaces
-            for block in piece.blocks:
-                coords.add(block.top_left)
-            used_x_coords = set()
-            for coord in coords:
-                if coord.x not in used_x_coords:
-                    pass
-
         # get current height
         max_depth = 0
         for block in self.game.cur_piece.blocks:
@@ -144,11 +159,11 @@ class TetrisEnv(gym.Env):
 
         solid_score = 0
         if self.game.just_dropped:
-            spaces_beneath = _spaces_beneath(self.game.cur_piece)
+            spaces_beneath = self.game.dropped_piece_grid.empty_spaces_beneath
             if spaces_beneath == 0:
-                solid_score = 0.3
+                solid_score = 0.5
             else:
-                solid_score = -1 * (self._sigmoid(spaces_beneath) * 2 - 1)
+                solid_score = 0.5 - self._sigmoid(spaces_beneath) * 2 - 1
 
         return down_score + solid_score
 
@@ -158,7 +173,7 @@ class TetrisEnv(gym.Env):
         """
         return self._sinusoidal_amplify(
             LINE_CLEAR_SCORES[self.game.dropped_piece_grid.lines_just_cleared] / 800
-        ) + numpy.float64(0.001)
+        )
 
     def _sinusoidal_amplify(self, inp) -> float:
         return numpy.sin(numpy.pi * 0.5 * inp)
