@@ -164,17 +164,30 @@ class TetrisEnv(gym.Env):
         max_depth = 0
         for block in self.game.cur_piece.blocks:
             max_depth = max(max_depth, block.top_left.y // SPACE_SIZE)
-        down_score = self._sinusoidal_amplify(max_depth / 19) * 0.01  # 0.01 is max
+        down_score = self._sinusoidal_amplify(max_depth / 19) * 1  # 0.01 is max
 
         solid_score = 0
         if self.game.just_dropped:
             spaces_beneath = self.game.dropped_piece_grid.empty_spaces_beneath
             if spaces_beneath == 0:
-                solid_score = 1
+                solid_score = 5
             else:
-                solid_score = 1 - self._sigmoid(spaces_beneath) * 2 - 1
+                solid_score = 5 - 4 * (self._sigmoid(spaces_beneath) * 2 - 1)
 
-        return down_score + solid_score + self._sparse_reward() * 10
+        return down_score + solid_score + self._sparse_reward() * 100
+
+    def _solid_reward_v2(self) -> float:
+        """
+        solidv1 but with more points for placing and points based on delta density of
+        the region w/ blocks
+        """
+        # get current height
+        max_depth = 0
+        for block in self.game.cur_piece.blocks:
+            max_depth = max(max_depth, block.top_left.y // SPACE_SIZE)
+        down_score = self._sinusoidal_amplify(max_depth / 19) * 1  # 0.01 is max
+
+        return down_score
 
     def _sparse_reward(self) -> float:
         """

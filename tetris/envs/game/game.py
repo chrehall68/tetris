@@ -142,6 +142,10 @@ class TetrisGame:
         self.render()
         pygame.time.wait(50)
 
+    @property
+    def total_lines_cleared(self):
+        return self.dropped_piece_grid.total_lines_cleared
+
 
 """
 gamer = TetrisGame(render_mode="human")

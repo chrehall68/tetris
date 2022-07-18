@@ -16,6 +16,8 @@ class DroppedPieceGrid:
                 for y in range(PLAYER_GRID_DIMENSIONS[1])
             ]
         )
+
+        # useful data variables
         self.height = 0
         self.past_height = 0
         self.delta_h = 0
@@ -24,7 +26,9 @@ class DroppedPieceGrid:
         self.last_piece_ending_height = 0
         self.last_piece_spaces = []
         self.empty_spaces_beneath = 0
+        self.total_lines_cleared = 0
 
+        # render mode
         self.render_mode = render_mode
         if self.render_mode == "human":
             pygame.init()
@@ -120,6 +124,7 @@ class DroppedPieceGrid:
             self.height = self._get_height()
             self.delta_h = self.height - self.past_height
             self.last_piece_ending_height = max_height + 1  # +1 so that 19 -> 20
+            self.total_lines_cleared += rows_cleared
 
         return self
 
@@ -136,6 +141,23 @@ class DroppedPieceGrid:
         for row in self.used_spaces:
             ret.append(tuple([1 if row[x] is not None else 0 for x in range(len(row))]))
         return tuple(ret)
+
+    def _get_density(self):
+        min_x = min_y = float("inf")
+        max_x = max_y = 0
+        count = 0
+        for y in range(self.used_spaces.shape[0]):
+            for x in range(self.used_spaces.shape[1]):
+                if self.used_spaces[y, x]:
+                    min_x = min(min_x, x)
+                    max_x = max(max_x, x)
+                    min_y = min(min_y, y)
+                    max_y = max(max_y, y)
+                    count += 1
+        print(
+            f"min x is {min_x} max x is {max_x} min y is {min_y} max y is {max_y} and count is {count}"
+        )
+        return count / ((max_y - min_y + 1) * (max_x - min_x + 1))
 
     def _get_height(self):
         """
