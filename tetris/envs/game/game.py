@@ -49,7 +49,7 @@ class TetrisGame:
         """
         Resets tetris.
         """
-        if self.render_mode == "human":
+        if self.render_mode == "human" or self.render_mode == "rgb-array":
             pygame.init()
             self.screen = pygame.display.set_mode(FULL_WINDOW_SIZE)
             pygame.display.set_caption("tetris")
@@ -82,7 +82,7 @@ class TetrisGame:
         self.cur_piece = self.instantiate_piece(self.next_pieces.step())
 
     def render(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         self.screen.fill(BG_COLOR)
         self.player_screen.fill(BG_COLOR)
 
@@ -107,6 +107,8 @@ class TetrisGame:
         self.screen.blit(self.holder_screen, HOLDER_SCREEN_POS)
 
         pygame.display.update()
+        if self.render_mode == "rgb-array":
+            return pygame.surfarray.array3d(self.screen)
 
     def step(self, events: Optional[pygame.event.Event] = None):
         if events is None:

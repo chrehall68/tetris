@@ -18,7 +18,7 @@ class NextPieces:
         self.piece_options = (LPiece, JPiece, IPiece, SPiece, ZPiece, TPiece, OPiece)
         self.next_pieces = [random.choice(self.piece_options) for i in range(3)]
         self.render_mode = render_mode
-        if self.render_mode == "human":
+        if self.render_mode == "human" or self.render_mode == "rgb-array":
             pygame.init()
             pygame.font.init()
             self.font = pygame.font.SysFont("Comic Sans", TEXT_SIZE)
@@ -29,7 +29,7 @@ class NextPieces:
         return ret
 
     def draw(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         self.screen.fill(BLACK)
         self.screen.blit(self.font.render("Next:", True, TEXT_COLOR), (0, 0))
         for piece, idx in zip(self.next_pieces, [i for i in range(3)]):

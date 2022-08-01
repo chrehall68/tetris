@@ -16,7 +16,7 @@ class Holder:
         self.piece_screen = pygame.Surface(HOLDER_BOX_DIMENSIONS)
         self.held_piece = None
         self.render_mode = render_mode
-        if self.render_mode == "human":
+        if self.render_mode == "human" or self.render_mode == "rgb-array":
             pygame.init()
             pygame.font.init()
             self.font = pygame.font.SysFont("Comic Sans", TEXT_SIZE)
@@ -36,7 +36,7 @@ class Holder:
         return temp
 
     def draw(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         self.screen.fill(BG_COLOR)
         self.piece_screen.fill(BG_COLOR)
 

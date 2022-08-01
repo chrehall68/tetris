@@ -14,7 +14,7 @@ class Score:
         self.screen = screen
         self.score = 0
         self.render_mode = render_mode
-        if self.render_mode == "human":
+        if self.render_mode == "human" or self.render_mode == "rgb-array":
             pygame.init()
             pygame.font.init()
 
@@ -24,6 +24,6 @@ class Score:
         self.score += o
 
     def draw(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         self.screen.fill(BG_COLOR)
         self.screen.blit(self.font.render(f"Score: {self.score}", True, WHITE), (0, 0))

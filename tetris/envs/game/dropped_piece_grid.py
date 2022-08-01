@@ -135,7 +135,7 @@ class DroppedPieceGrid:
         return self
 
     def draw(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         for row in self.used_spaces:
             for block in row:
                 if block is not None:

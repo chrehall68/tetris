@@ -17,7 +17,7 @@ class LineGrid:
             pygame.init()
 
     def draw(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         # vertical lines
         for i in range(1, PLAYER_GRID_DIMENSIONS[0]):
             pygame.draw.line(

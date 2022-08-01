@@ -87,7 +87,7 @@ class BasePiece:
         self.screen = screen
 
     def draw(self):
-        assert self.render_mode == "human"
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
         for block in self.blocks:
             block.draw()
 

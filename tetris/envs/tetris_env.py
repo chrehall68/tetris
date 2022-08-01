@@ -31,7 +31,7 @@ ACTION_MAPPINGS = {
 
 class TetrisEnv(gym.Env):
     metadata = {
-        "render_modes": ["human"],
+        "render_modes": ["human", "rgb-array"],
         "reward_modes": ["sparse", "distance", "solid", "sparsev2"],
         "step_modes": ["positive", "negative", "none"],
     }
@@ -48,16 +48,22 @@ class TetrisEnv(gym.Env):
 
         self.action_space = spaces.Discrete(len(KEY_MAPPINGS))
 
-        self.observation_space = spaces.Dict(
-            {
-                "held_piece": spaces.Box(0, 7, (1,), dtype=numpy.int64),
-                "dropped_piece_grid": spaces.Box(
-                    0,
-                    2,
-                    (PLAYER_GRID_DIMENSIONS[1] * PLAYER_GRID_DIMENSIONS[0],),
-                    dtype=numpy.int64,
-                ),
-            }
+        # self.observation_space = spaces.Dict(
+        #     {
+        #         "held_piece": spaces.Box(0, 7, (1,), dtype=numpy.int64),
+        #         "dropped_piece_grid": spaces.Box(
+        #             0,
+        #             2,
+        #             (PLAYER_GRID_DIMENSIONS[1] * PLAYER_GRID_DIMENSIONS[0],),
+        #             dtype=numpy.int64,
+        #         ),
+        #     }
+        # )
+        self.observation_space = spaces.Box(
+            0,
+            7,
+            (PLAYER_GRID_DIMENSIONS[0] * PLAYER_GRID_DIMENSIONS[1] + 1,),
+            dtype=numpy.int64,
         )
         self.game = TetrisGame(render_mode=self.render_mode)
         self.past_score = 0
@@ -111,8 +117,8 @@ class TetrisEnv(gym.Env):
         else:
             self.render_mode = render_mode
 
-        assert self.render_mode == "human"
-        self.game.render()
+        assert self.render_mode == "human" or self.render_mode == "rgb-array"
+        return self.game.render()
 
     def step(self, action):
         try:
@@ -145,12 +151,12 @@ class TetrisEnv(gym.Env):
         for y in range(len(dropped_piece_grid)):
             dropped_piece_grid[y] = tuple(dropped_piece_grid[y])
 
-        return {
-            "held_piece": numpy.array([held_piece_val], dtype=numpy.int64),
-            "dropped_piece_grid": numpy.array(
-                tuple(dropped_piece_grid), dtype=numpy.int64
-            ).flatten(),
-        }
+        dropped_piece_grid = list(
+            numpy.array(tuple(dropped_piece_grid), dtype=numpy.int64).flatten()
+        )
+        dropped_piece_grid.append(held_piece_val)
+
+        return numpy.array(dropped_piece_grid)
 
     def _get_reward(self):
         return (
