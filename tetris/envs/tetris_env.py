@@ -32,7 +32,7 @@ ACTION_MAPPINGS = {
 class TetrisEnv(gym.Env):
     metadata = {
         "render_modes": ["human"],
-        "reward_modes": ["sparse", "distance", "solid"],
+        "reward_modes": ["sparse", "distance", "solid", "sparsev2"],
         "step_modes": ["positive", "negative", "none"],
     }
 
@@ -41,6 +41,8 @@ class TetrisEnv(gym.Env):
         render_mode: Optional[str] = None,
         reward_mode: Optional[str] = None,
         step_mode: Optional[str] = None,
+        max_timesteps: Optional[int] = 500,
+        penalize_illegal: Optional[bool] = True,
     ) -> None:
         self.render_mode = render_mode
 
@@ -64,6 +66,7 @@ class TetrisEnv(gym.Env):
             "sparse": self._sparse_reward,
             "distance": self._distance_based_reward,
             "solid": self._solid_reward,
+            "sparsev2": self._sparse_reward_v2,
         }
         self.step_function = {
             "positive": lambda: 0.001,
@@ -83,14 +86,19 @@ class TetrisEnv(gym.Env):
         else:
             self.step_mode = "positive"  # positive step by default
 
-        self.penalize_illegal = True
+        self.penalize_illegal = penalize_illegal
         self.penalties = {False: lambda: 0, True: self._penalize_illegal_moves}
 
         print(f"using reward mode {self.reward_mode}")
         print(f"using step mode {self.step_mode}")
+        print(f"{'' if self.penalize_illegal else 'not '}penalizing illegal moves")
+
+        self.cur_timesteps = 0
+        self.max_timesteps = max_timesteps
 
     def reset(self, seed=None, return_info=False, options=None):
         self.past_score = 0
+        self.cur_timesteps = 0
         self.game.reset()
 
         if return_info:
@@ -111,6 +119,9 @@ class TetrisEnv(gym.Env):
             self.game.step([ACTION_MAPPINGS[action]])
         except Exception:
             self.game.step([ACTION_MAPPINGS[action.item()]])  # happens for dqn
+        self.cur_timesteps += 1
+        if self.cur_timesteps >= self.max_timesteps:
+            self.game.run = False
         return self._get_obs(), self._get_reward(), self._get_done(), self._get_info()
 
     def reward(self):
@@ -142,8 +153,6 @@ class TetrisEnv(gym.Env):
         }
 
     def _get_reward(self):
-        if self._get_done():
-            return -100
         return (
             self.reward_functions[self.reward_mode]()
             + self.step_function[self.step_mode]()
@@ -176,19 +185,6 @@ class TetrisEnv(gym.Env):
 
         return down_score + solid_score + self._sparse_reward() * 100
 
-    def _solid_reward_v2(self) -> float:
-        """
-        solidv1 but with more points for placing and points based on delta density of
-        the region w/ blocks
-        """
-        # get current height
-        max_depth = 0
-        for block in self.game.cur_piece.blocks:
-            max_depth = max(max_depth, block.top_left.y // SPACE_SIZE)
-        down_score = self._sinusoidal_amplify(max_depth / 19) * 1  # 0.01 is max
-
-        return down_score
-
     def _sparse_reward(self) -> float:
         """
         Idea: give score only based on clearing lines
@@ -196,6 +192,9 @@ class TetrisEnv(gym.Env):
         return self._sinusoidal_amplify(
             LINE_CLEAR_SCORES[self.game.dropped_piece_grid.lines_just_cleared] / 800
         )
+
+    def _sparse_reward_v2(self) -> float:
+        return self._sparse_reward() * 100
 
     def _sinusoidal_amplify(self, inp) -> float:
         return numpy.sin(numpy.pi * 0.5 * inp)

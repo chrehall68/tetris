@@ -27,6 +27,8 @@ class DroppedPieceGrid:
         self.last_piece_spaces = []
         self.empty_spaces_beneath = 0
         self.total_lines_cleared = 0
+        self.past_density = 0
+        self.density = 0
 
         # render mode
         self.render_mode = render_mode
@@ -58,6 +60,10 @@ class DroppedPieceGrid:
             )
         except IndexError:
             return True
+
+    @property
+    def delta_density(self):
+        return self.density - self.past_density
 
     def __contains__(self, coord: Coordinate) -> bool:
         true_coord = coord // SPACE_SIZE
@@ -154,10 +160,12 @@ class DroppedPieceGrid:
                     min_y = min(min_y, y)
                     max_y = max(max_y, y)
                     count += 1
-        print(
-            f"min x is {min_x} max x is {max_x} min y is {min_y} max y is {max_y} and count is {count}"
-        )
-        return count / ((max_y - min_y + 1) * (max_x - min_x + 1))
+        # print(
+        #    f"min x is {min_x} max x is {max_x} min y is {min_y} max y is {max_y} and count is {count}"
+        # )
+        density = count / ((max_y - min_y + 1) * (max_x - min_x + 1))
+        # print(f"and density is {density}")
+        return density
 
     def _get_height(self):
         """
@@ -175,6 +183,7 @@ class DroppedPieceGrid:
         """
         Returns the max height of the pieces
         """
+        self.past_density = self.density
         max_height = 0
         if piece is not None:
             self.last_piece_spaces = []
@@ -185,7 +194,7 @@ class DroppedPieceGrid:
                 self.used_spaces[temp.y, temp.x] = block
                 self.last_piece_spaces.append((temp.y, temp.x))
                 max_height = max(temp.y, max_height)
-
+        self.density = self._get_density()
         return max_height
 
     def _undo_last_drop(self):
