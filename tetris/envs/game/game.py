@@ -1,3 +1,4 @@
+from copy import copy, deepcopy
 import pygame
 from tetris.envs.game.constants import *
 from tetris.envs.game.dropped_piece_grid import DroppedPieceGrid
@@ -138,6 +139,26 @@ class TetrisGame:
             if not self.cur_piece.move_down():
                 self.get_next_piece()
                 self.executions = STEPS_BETWEEN_DOWNS // 2
+
+        if not self.valid_last_move:
+            print("invalid move")
+
+    def is_move_valid(self, event):
+        if event.type != pygame.KEYDOWN:
+            return False
+
+        # hold a piece
+        if event.key == pygame.K_c:
+            return self.holdable
+
+        # do nothing
+        elif event.key == pygame.K_q:
+            return True
+
+        # move/rotate
+        else:
+            clone = self.cur_piece.clone()
+            return clone.move([event])
 
     def play_execution_based(self):
         self.step()

@@ -334,6 +334,11 @@ class OPiece(Piece):
             render_mode=render_mode,
         )
 
+    def clone(self):
+        ret = OPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret._get_blocks()
+        return ret
+
 
 class ZPiece(Piece):
     def __init__(
@@ -354,6 +359,13 @@ class ZPiece(Piece):
             score_keeper,
             render_mode,
         )
+
+    def clone(self):
+        ret = ZPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret.arrangement = self.arrangement.copy()
+        ret.rotate_center = self.rotate_center
+        ret._get_blocks()
+        return ret
 
 
 class SPiece(Piece):
@@ -376,6 +388,13 @@ class SPiece(Piece):
             render_mode,
         )
 
+    def clone(self):
+        ret = SPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret.arrangement = self.arrangement.copy()
+        ret.rotate_center = self.rotate_center
+        ret._get_blocks()
+        return ret
+
 
 class JPiece(Piece):
     def __init__(
@@ -396,6 +415,13 @@ class JPiece(Piece):
             score_keeper,
             render_mode,
         )
+
+    def clone(self):
+        ret = JPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret.arrangement = self.arrangement.copy()
+        ret.rotate_center = self.rotate_center
+        ret._get_blocks()
+        return ret
 
 
 class LPiece(Piece):
@@ -418,6 +444,13 @@ class LPiece(Piece):
             render_mode,
         )
 
+    def clone(self):
+        ret = LPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret.arrangement = self.arrangement.copy()
+        ret.rotate_center = self.rotate_center
+        ret._get_blocks()
+        return ret
+
 
 class IPiece(Piece):
     def __init__(
@@ -439,6 +472,13 @@ class IPiece(Piece):
             render_mode,
         )
 
+    def clone(self):
+        ret = IPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret.arrangement = self.arrangement.copy()
+        ret.rotate_center = self.rotate_center
+        ret._get_blocks()
+        return ret
+
 
 class TPiece(Piece):
     def __init__(
@@ -459,3 +499,10 @@ class TPiece(Piece):
             score_keeper,
             render_mode,
         )
+
+    def clone(self):
+        ret = TPiece(self.screen, self.top_left, self.dropped_piece_grid, None, None)
+        ret.arrangement = self.arrangement.copy()
+        ret.rotate_center = self.rotate_center
+        ret._get_blocks()
+        return ret

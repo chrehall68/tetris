@@ -27,6 +27,16 @@ ACTION_MAPPINGS = {
     6: pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_SPACE}),
     7: pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_q}),  # don't do anything
 }
+keys = [
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_UP}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_DOWN}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_LEFT}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_RIGHT}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_z}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_c}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_SPACE}),
+    pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_q}),
+]
 
 
 class TetrisEnv(gym.Env):
@@ -41,30 +51,20 @@ class TetrisEnv(gym.Env):
         render_mode: Optional[str] = None,
         reward_mode: Optional[str] = None,
         step_mode: Optional[str] = None,
-        max_timesteps: Optional[int] = 500,
+        max_timesteps: Optional[int] = 5000,
         penalize_illegal: Optional[bool] = True,
     ) -> None:
         self.render_mode = render_mode
 
         self.action_space = spaces.Discrete(len(KEY_MAPPINGS))
 
-        # self.observation_space = spaces.Dict(
-        #     {
-        #         "held_piece": spaces.Box(0, 7, (1,), dtype=numpy.int64),
-        #         "dropped_piece_grid": spaces.Box(
-        #             0,
-        #             2,
-        #             (PLAYER_GRID_DIMENSIONS[1] * PLAYER_GRID_DIMENSIONS[0],),
-        #             dtype=numpy.int64,
-        #         ),
-        #     }
-        # )
         self.observation_space = spaces.Box(
             0,
             7,
             (PLAYER_GRID_DIMENSIONS[0] * PLAYER_GRID_DIMENSIONS[1] + 1,),
             dtype=numpy.int64,
         )
+
         self.game = TetrisGame(render_mode=self.render_mode)
         self.past_score = 0
 
@@ -129,6 +129,14 @@ class TetrisEnv(gym.Env):
         if self.cur_timesteps >= self.max_timesteps:
             self.game.run = False
         return self._get_obs(), self._get_reward(), self._get_done(), self._get_info()
+
+    def get_invalid_action_mask(self):
+        ret = [True for _ in range(len(keys))]
+        for idx in range(len(keys)):
+            event = keys[idx]
+            if not self.game.is_move_valid(event):
+                ret[idx] = False
+        return ret
 
     def reward(self):
         return self._get_reward()

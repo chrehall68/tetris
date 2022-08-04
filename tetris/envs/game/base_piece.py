@@ -113,3 +113,6 @@ class BasePiece:
     def set_top_left(self, new_top_left: Coordinate):
         self.top_left = new_top_left
         self._get_blocks()
+
+    def clone(self):
+        raise NotImplementedError("Must be done in a subclass")
