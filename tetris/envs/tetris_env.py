@@ -53,6 +53,7 @@ class TetrisEnv(gym.Env):
         step_mode: Optional[str] = None,
         max_timesteps: Optional[int] = 5000,
         penalize_illegal: Optional[bool] = True,
+        illegal_penalty: Optional[int] = -10,
     ) -> None:
         self.render_mode = render_mode
 
@@ -94,6 +95,7 @@ class TetrisEnv(gym.Env):
 
         self.penalize_illegal = penalize_illegal
         self.penalties = {False: lambda: 0, True: self._penalize_illegal_moves}
+        self.illegal_penalty = illegal_penalty
 
         print(f"using reward mode {self.reward_mode}")
         print(f"using step mode {self.step_mode}")
@@ -142,6 +144,11 @@ class TetrisEnv(gym.Env):
         return self._get_reward()
 
     def _get_obs(self):
+        """
+        Returns an observation of the dropped piece grid, held piece, whether you
+        can hold or not, and the next pieces
+        """
+        # held piece
         for T, val in PIECE_TO_NUMBER.items():
             if (
                 self.game.holder.held_piece == T
@@ -150,6 +157,18 @@ class TetrisEnv(gym.Env):
                 held_piece_val = val
                 break
 
+        # whether you can hold or not
+        is_hold_valid = 1 if self.game.holdable else 0
+
+        # next pieces
+        next_pieces = []
+        for piece in self.game.next_pieces.next_pieces:
+            for T, val in PIECE_TO_NUMBER.items():
+                if piece == T or type(piece) == T:
+                    next_pieces.append(val)
+                    break
+
+        # dropped piece grid
         dropped_piece_grid = list(self.game.dropped_piece_grid.numeric_used_spaces)
         for y in range(len(dropped_piece_grid)):
             dropped_piece_grid[y] = list(dropped_piece_grid[y])
@@ -163,6 +182,8 @@ class TetrisEnv(gym.Env):
             numpy.array(tuple(dropped_piece_grid), dtype=numpy.int64).flatten()
         )
         dropped_piece_grid.append(held_piece_val)
+        dropped_piece_grid.append(is_hold_valid)
+        dropped_piece_grid.extend(next_pieces)
 
         return numpy.array(dropped_piece_grid)
 
@@ -175,7 +196,7 @@ class TetrisEnv(gym.Env):
 
     def _penalize_illegal_moves(self) -> float:
         if not self.game.valid_last_move:
-            return -10
+            return self.illegal_penalty
         return 0
 
     def _solid_reward(self) -> float:
